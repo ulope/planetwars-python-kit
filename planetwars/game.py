@@ -11,6 +11,7 @@ log = getLogger(__name__)
 
 class Game(object):
     def __init__(self, bot_class, timeout=0.95, logging_enabled=False):
+        self.logging_enabled = logging_enabled
         if logging_enabled:
             log_file = os.path.join(os.getcwd(), "planetwars.log")
             basicConfig(filename=log_file, level=DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
@@ -51,7 +52,10 @@ class Game(object):
                         log.warning("Bot failed to catch TimeIsUp exception!")
                         pass
                     except:
-                        log.error("Exception in bot.do_turn()", exc_info=True)
+                        if self.logging_enabled:
+                            log.error("Exception in bot.do_turn()", exc_info=True)
+                        else:
+                            raise
                     if has_itimer:
                         signal.setitimer(signal.ITIMER_REAL, 0)
                     log.info("### TURN END ### (time taken: %0.4f s)" % (time() - turn_start, ))
