@@ -44,7 +44,7 @@ class Planet(object):
     def send_fleet(self, target, ship_count):
         """Sends a fleet to target. Also accepts a set of targets."""
         if isinstance(target, set):
-            if len(self.ship_count) >= ship_count * len(target):
+            if self.ship_count >= ship_count * len(target):
                 self.universe.send_fleet(self, target, ship_count)
             return
         if self.ship_count >= ship_count:
