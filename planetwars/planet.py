@@ -1,6 +1,7 @@
-from planetwars.players import PLAYER_MAP
-from planetwars.util import Point
+from planetwars.player import PLAYER_MAP
+from planetwars.util import Point, TypedSetBase
 from math import ceil, sqrt
+import player
 
 class Planet(object):
     def __init__(self, universe, id, x, y, owner, ship_count, growth_rate):
@@ -26,16 +27,28 @@ class Planet(object):
     __sub__ = distance
 
     @property
-    def incoming_fleets(self):
-        return self.universe.get_fleets_to(self)
+    def attacking_fleets(self):
+        """Hostile (as seen from this planets owner) fleets en-route to this planet."""
+        return self.universe.find_fleets(destination=self, owner=player.EVERYBODY - self.owner)
 
     @property
-    def outgoing_fleets(self):
-        return self.universe.get_fleets_from(self)
+    def reinforcement_fleets(self):
+        """Friendly (as seen from this planets owner) fleets en-route to this planet."""
+        return self.universe.find_fleets(destination=self, owner=self.owner)
 
-    #def get_incoming_fleets_for(self, owner):
+    @property
+    def sent_fleets(self):
+        """Fleets owned by this planets owner sent from this planet."""
+        return self.universe.find_fleets(source=self, owner=self.owner)
 
-
-    def send_fleet(self, other, ship_count):
+    def send_fleet(self, target, ship_count):
+        """Sends a fleet to target. Also accepts a set of targets."""
+        if isinstance(target, set):
+            if len(self.ship_count) >= ship_count * len(target):
+                self.universe.send_fleet(self, target, ship_count)
+            return
         if self.ship_count >= ship_count:
-            self.universe.send_fleet(self, other, ship_count)
+            self.universe.send_fleet(self, target, ship_count)
+
+class Planets(TypedSetBase):
+    accepts = (Planet, )

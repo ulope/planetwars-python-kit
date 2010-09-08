@@ -1,78 +1,100 @@
-from collections import defaultdict
-from planetwars.util import ParsingException, _make_id
-from planetwars.fleet import Fleet
-from planetwars.planet import Planet
-from planetwars import players
+from planetwars.util import ParsingException, _make_id, SetDict
+from planetwars.fleet import Fleet, Fleets
+from planetwars.planet import Planet, Planets
+from planetwars import player
+from planetwars.player import Players
 
 class Universe(object):
+    """'Main' planetwars object. The Universe knows about all planets and fleets and talks to the Game.
+
+    It offers some convenience functions (e.g. my_planets, my_fleets, etc.) but the real power lies in
+    the "find_fleets" and "find_planet" methods.
+
+    Example:
+    >>> universe.find_fleets(owner=player.ENEMIES, destination=universe.find_planets(owner=player.ME, growth_rate=5))
+    This would return all hostile fleets en route to any of 'my' 5-growth planets.
+    """
+
     def __init__(self, game):
         self.game = game
         self.planets = {}
         self.fleets = {}
         self.planet_id_map = {}
         self.planet_id = 0
-        self._invalidate_cache()
+        self._cache = {
+            "f": {
+                "o": SetDict(Fleets),
+                "s": SetDict(Fleets),
+                "d": SetDict(Fleets),
+            },
+            "p": {
+                "o": SetDict(Planets),
+                "g": SetDict(Planets),
+            }
+        }
 
-    def _invalidate_cache(self):
-        self._planets_by_owner = None
-        self._fleets_by_owner = None
-        self._fleets_by_destination = None
-        self._fleets_by_source = None
+    def find_fleets(self, owner=None, source=None, destination=None):
+        """
+        Returns a set of fleets that matches *all* (i.e. boolean and) criteria.
+        All parameters accept single or set arguments (e.g. player.ME vs. player.ENEMIES).
+        """
+        ret = []
+        if owner:
+            ret.append(self._cache["f"]["o"][Players(owner)])
+        if source:
+            ret.append(self._cache["f"]["s"][Planets(source)])
+        if destination:
+            ret.append(self._cache["f"]["d"][Planets(destination)])
+        if ret:
+            if len(ret) > 1:
+                return reduce(lambda x, y: x & y, ret[1:], ret[0])
+            return ret[0]
+        return Fleets()
 
-    def _generate_fleet_owner_cache(self):
-        if not self._fleets_by_owner:
-            self._fleets_by_owner = defaultdict(list)
-            for fleet in self.fleets.values():
-                self._fleets_by_owner[fleet.owner].append(fleet)
+    def find_planets(self, owner=None, growth_rate=None):
+        """
+        Returns a set of planets that matches *all* (i.e. boolean and) criteria.
+        All parameters accept single or set arguments (e.g. player.ME vs. player.ENEMIES).
+        """
+        ret = []
+        if owner:
+            ret.append(self._cache["p"]["o"][Players(owner)])
+        if growth_rate:
+            ret.append(self._cache["p"]["g"][growth_rate])
 
-    def _generate_planet_cache(self):
-        if not self._planets_by_owner:
-            self._planets_by_owner = defaultdict(list)
-            for planet in self.planets.values():
-                self._planets_by_owner[planet.owner].append(planet)
+        if ret:
+            if len(ret) > 1:
+                return ret[0] & ret[1]
+            return ret[0]
+        return Planets()
 
+
+    # Shortcut / Convenience properties
     @property
     def my_fleets(self):
-        self._generate_fleet_owner_cache()
-        return self._fleets_by_owner[players.ME]
+        return self.find_fleets(owner=player.ME)
 
     @property
-    def their_fleets(self):
-        self._generate_fleet_owner_cache()
-        return self._fleets_by_owner[players.PLAYER2] + self._fleets_by_owner[players.PLAYER3] + self._fleets_by_owner[players.PLAYER4]
-
-    def get_fleets_to(self, destination):
-        if not self._fleets_by_destination:
-            self._fleets_by_destination = defaultdict(list)
-            for fleet in self.fleets.values():
-                self._fleets_by_destination[fleet.destination.id].append(fleet)
-        return self._fleets_by_destination[destination.id]
-
-    def get_fleets_from(self, source):
-        if not self._fleets_by_source:
-            self._fleets_by_source = defaultdict(list)
-            for fleet in self.fleets.values():
-                self._fleets_by_source[fleet.source.id].append(fleet)
-        return self._fleets_by_source[source.id]
+    def enemy_fleets(self):
+        return self.find_fleets(owner=player.ENEMIES)
 
     @property
     def my_planets(self):
-        self._generate_planet_cache()
-        return self._planets_by_owner[players.ME]
+        return self.find_planets(owner=player.ME)
 
     @property
-    def their_planets(self):
-        self._generate_planet_cache()
-        return self._planets_by_owner[players.PLAYER2] + self._planets_by_owner[players.PLAYER3] + self._planets_by_owner[players.PLAYER4]
+    def enemy_planets(self):
+        return self.find_planets(owner=player.ENEMIES)
 
     @property
     def nobodies_planets(self):
-        self._generate_planet_cache()
-        return self._planets_by_owner[players.NOBODY]
+        return self.find_planets(owner=player.NOBODY)
 
+    @property
+    def not_my_planets(self):
+        return self.find_planets(owner=player.NOT_ME)
 
     def update(self, game_state_line):
-        #log.debug("Game state: %s" % game_state_line)
         line = game_state_line.split("#")[0]
         tokens = line.split()
         if len(tokens) < 5:
@@ -83,11 +105,13 @@ class Universe(object):
                 raise ParsingException("Invalid format in gamestate: '%s'" % (game_state_line,))
             id = _make_id(*tokens[1:3])
             if id in self.planet_id_map:
-                #log.debug("updating planet %02d / %d" % (self.planet_id_map.get(id, -1), id))
-                self.planets[self.planet_id_map[id]].update(*tokens[3:5])
+                self._update_planet(id, tokens[3:5])
             else:
-                self.planets[self.planet_id] = Planet(self, self.planet_id, *tokens[1:])
+                new_planet = Planet(self, self.planet_id, *tokens[1:])
+                self.planets[self.planet_id] = new_planet
                 self.planet_id_map[id] = self.planet_id
+                self._cache['p']['o'][new_planet.owner].add(new_planet)
+                self._cache['p']['g'][new_planet.growth_rate].add(new_planet)
                 self.planet_id += 1
         elif tokens[0] == "F":
             if len(tokens) != 7:
@@ -96,13 +120,32 @@ class Universe(object):
             if id in self.fleets:
                 self.fleets[id].update(tokens[6])
             else:
-                self.fleets[id] = Fleet(self, id, *tokens[1:])
+                new_fleet = Fleet(self, id, *tokens[1:])
+                self.fleets[id] = new_fleet
+                self._cache['f']['o'][new_fleet.owner].add(new_fleet)
+                self._cache['f']['s'][new_fleet.source].add(new_fleet)
+                self._cache['f']['d'][new_fleet.destination].add(new_fleet)
+
+    def _update_planet(self, planet_id, values):
+        planet = self.planets[self.planet_id_map[planet_id]]
+        old_owner = planet.owner
+        planet.update(*values)
+        if planet.owner != old_owner:
+            self._cache['p']['o'][old_owner].remove(planet)
+            self._cache['p']['o'][planet.owner].add(planet)
 
     def send_fleet(self, source, destination, ship_count):
+        if isinstance(destination, set):
+            for target in destination:
+                self.game.send_fleet(source.id, target.id, ship_count)
+            return
         self.game.send_fleet(source.id, destination.id, ship_count)
 
     def turn_done(self):
-        self._invalidate_cache()
         for id, fleet in self.fleets.items():
             if fleet.turns_remaining == 1:
+                self._cache['f']['o'][fleet.owner].remove(fleet)
+                self._cache['f']['s'][fleet.source].remove(fleet)
+                self._cache['f']['d'][fleet.destination].remove(fleet)
                 del self.fleets[id]
+

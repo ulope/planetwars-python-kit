@@ -1,4 +1,5 @@
-from planetwars.players import PLAYER_MAP
+from planetwars.player import PLAYER_MAP
+from planetwars.util import TypedSetBase
 
 class Fleet(object):
     def __init__(self, universe, id, owner, ship_count, source, destination, trip_length, turns_remaining):
@@ -16,3 +17,6 @@ class Fleet(object):
 
     def update(self, turns_remaining):
         self.turns_remaining = int(turns_remaining)
+
+class Fleets(TypedSetBase):
+    accepts = (Fleet, )

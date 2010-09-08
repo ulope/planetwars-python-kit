@@ -19,7 +19,7 @@
 # THE SOFTWARE.
 
 
-from players import Player, Players, PLAYER1, PLAYER2, PLAYER3, PLAYER4, ME, NOBODY, ENEMIES, NOT_ME
+from player import Player, Players, PLAYER1, PLAYER2, PLAYER3, PLAYER4, ME, NOBODY, ENEMIES, NOT_ME, EVERYBODY
 from util import Point
 from fleet import Fleet
 from planet import Planet
