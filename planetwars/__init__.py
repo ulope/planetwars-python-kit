@@ -38,14 +38,14 @@ Then instantiate Game with your bot class as argument.
 e.g.:
 
 >>> from planetwars import BaseBot, Game
+>>> from random import choice
 >>>
 >>> class MyBot(BaseBot):
 ...     def do_turn():
-...         self.universe.my_planets[0].send_fleet(self.universe.enemy_planets[0], 5)
+...         not_my_planets = list(self.universe.not_my_planets)
+...         for planet in self.universe.my_planets:
+...             planet.send_fleet(choice(not_my_planets), 5)
 >>>
 >>> Game(MyBot)
 >>>
 """
-
-
-
