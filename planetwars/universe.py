@@ -37,6 +37,8 @@ class Universe(object):
         """
         Returns a set of fleets that matches *all* (i.e. boolean and) criteria.
         All parameters accept single or set arguments (e.g. player.ME vs. player.ENEMIES).
+
+        Returns <Fleets> (@see fleet.py) objects (a set subclass).
         """
         ret = []
         if owner:
@@ -55,6 +57,8 @@ class Universe(object):
         """
         Returns a set of planets that matches *all* (i.e. boolean and) criteria.
         All parameters accept single or set arguments (e.g. player.ME vs. player.ENEMIES).
+
+        Returns <Planets> (@see planet.py) objects (a set subclass).
         """
         ret = []
         if owner:
@@ -95,6 +99,7 @@ class Universe(object):
         return self.find_planets(owner=player.NOT_ME)
 
     def update(self, game_state_line):
+        """Update the game state. Gets called from Game."""
         line = game_state_line.split("#")[0]
         tokens = line.split()
         if len(tokens) < 5:
