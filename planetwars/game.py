@@ -1,20 +1,28 @@
 import sys
 from logging import getLogger, basicConfig, DEBUG
 import signal
-import os
-
 from planetwars.universe import Universe
 from planetwars.util import timeout_handler, TimeIsUp
 from time import time
+from optparse import OptionParser
 
 log = getLogger(__name__)
 
+parser = OptionParser()
+parser.add_option("-l", "--log", dest="logfile", default=False,
+                  help="Activate logging. Write log entries to LOGFILE", metavar="LOGFILE")
+
 class Game(object):
-    def __init__(self, bot_class, timeout=0.95, logging_enabled=False):
-        self.logging_enabled = logging_enabled
-        if logging_enabled:
-            log_file = os.path.join(os.getcwd(), "planetwars.log")
-            basicConfig(filename=log_file, level=DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
+    """The Game object talks to the tournament engine and updates the universe.
+    It also instantiates your Bot implementaion in __init__.
+
+    It supports a few command-line options call with "-h" to see a list.
+    """
+    def __init__(self, bot_class, timeout=0.95):
+        options, _ = parser.parse_args()
+        self.logging_enabled = bool(options.logfile)
+        if self.logging_enabled:
+            basicConfig(filename=options.logfile, level=DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
             
         log.info("----------- GAME START -----------")
         self.universe = Universe(self)
