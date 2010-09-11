@@ -30,6 +30,12 @@ class Game(object):
         self.timeout = timeout
 
         signal.signal(signal.SIGALRM, timeout_handler)
+        self.has_alarm = True
+        try:
+            signal.signal(signal.SIGALRM, timeout_handler)
+        except AttributeError:
+            # signal.SIGALRM not supported on this platform
+            self.has_alarm = False
         try:
             #noinspection PyUnresolvedReferences
             import psyco
@@ -48,7 +54,7 @@ class Game(object):
                     log.info("=== TURN START ===")
                     turn_start = time()
                     try:
-                        if has_itimer:
+                        if self.has_alarm and has_itimer:
                             signal.setitimer(signal.ITIMER_REAL, self.timeout)
                     except AttributeError:
                         has_itimer = False
@@ -64,7 +70,7 @@ class Game(object):
                             log.error("Exception in bot.do_turn()", exc_info=True)
                         else:
                             raise
-                    if has_itimer:
+                    if self.has_alarm and has_itimer:
                         signal.setitimer(signal.ITIMER_REAL, 0)
                     log.info("### TURN END ### (time taken: %0.4f s)" % (time() - turn_start, ))
                     turn_count += 1
