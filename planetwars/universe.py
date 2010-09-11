@@ -3,6 +3,9 @@ from planetwars.fleet import Fleet, Fleets
 from planetwars.planet import Planet, Planets
 from planetwars import player
 from planetwars.player import Players
+from logging import getLogger
+
+log = getLogger(__name__)
 
 class Universe(object):
     """'Main' planetwars object. The Universe knows about all planets and fleets and talks to the Game.
@@ -140,6 +143,7 @@ class Universe(object):
             self._cache['p']['o'][planet.owner].add(planet)
 
     def send_fleet(self, source, destination, ship_count):
+        log.debug("Sending fleet of %d from %s to %s." % (ship_count, source, destination))
         if isinstance(destination, set):
             for target in destination:
                 self.game.send_fleet(source.id, target.id, ship_count)
