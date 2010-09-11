@@ -53,7 +53,7 @@ class Universe(object):
         if ret:
             if len(ret) > 1:
                 return reduce(lambda x, y: x & y, ret[1:], ret[0])
-            return ret[0]
+            return Fleets(ret[0])
         return Fleets()
 
     def find_planets(self, owner=None, growth_rate=None):
@@ -72,7 +72,7 @@ class Universe(object):
         if ret:
             if len(ret) > 1:
                 return ret[0] & ret[1]
-            return ret[0]
+            return Planets(ret[0])
         return Planets()
 
 
