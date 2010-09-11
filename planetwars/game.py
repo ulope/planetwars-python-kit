@@ -1,16 +1,21 @@
 import sys
-from logging import getLogger, basicConfig, DEBUG
+import logging
 import signal
 from planetwars.universe import Universe
 from planetwars.util import timeout_handler, TimeIsUp
 from time import time
 from optparse import OptionParser
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 parser = OptionParser()
 parser.add_option("-l", "--log", dest="logfile", default=False,
-                  help="Activate logging. Write log entries to LOGFILE", metavar="LOGFILE")
+                  help="Activate logging. Write log entries to FILE", metavar="FILE")
+parser.add_option("--level", dest="loglevel", default="DEBUG", type="choice",
+                  choices=["DEBUG", "INFO", "WARNING", "ERROR", "FATAL"],
+                  help="Only log messages of LOGLEVEL or higher importance. "
+                       "Valid levels are: DEBUG, INFO, WARNING, ERROR, FATAL. "
+                       "Defaults to DEBUG.", metavar="LOGLEVEL")
 
 class Game(object):
     """The Game object talks to the tournament engine and updates the universe.
@@ -20,16 +25,18 @@ class Game(object):
     """
     def __init__(self, bot_class, timeout=0.95):
         options, _ = parser.parse_args()
+
         self.logging_enabled = bool(options.logfile)
-        if self.logging_enabled:
-            basicConfig(filename=options.logfile, level=DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
-            
-        log.info("----------- GAME START -----------")
         self.universe = Universe(self)
         self.bot = bot_class(self.universe)
         self.timeout = timeout
+        self.turn_count = 0
 
-        signal.signal(signal.SIGALRM, timeout_handler)
+        if self.logging_enabled:
+            logging.basicConfig(filename=options.logfile, level=getattr(logging, options.loglevel), format="%(asctime)s %(levelname)s: %(message)s")
+            
+        log.info("----------- GAME START -----------")
+
         self.has_alarm = True
         try:
             signal.signal(signal.SIGALRM, timeout_handler)
@@ -45,12 +52,12 @@ class Game(object):
         self.main()
 
     def main(self):
-        turn_count = 0
         has_itimer = True
         try:
             while True:
                 line = sys.stdin.readline().strip()
                 if line.startswith("go"):
+                    self.turn_count += 1
                     log.info("=== TURN START ===")
                     turn_start = time()
                     try:
@@ -73,14 +80,13 @@ class Game(object):
                     if self.has_alarm and has_itimer:
                         signal.setitimer(signal.ITIMER_REAL, 0)
                     log.info("### TURN END ### (time taken: %0.4f s)" % (time() - turn_start, ))
-                    turn_count += 1
                     self.turn_done()
                 else:
                     self.universe.update(line)
         except KeyboardInterrupt:
             # exit
             pass
-        log.info("########### GAME END ########### (Turn count: %d)" % turn_count)
+        log.info("########### GAME END ########### (Turn count: %d)" % self.turn_count)
         
 
     def send_fleet(self, source_id, destination_id, ship_count):
