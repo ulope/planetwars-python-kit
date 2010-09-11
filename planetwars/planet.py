@@ -13,7 +13,7 @@ class Planet(object):
         self.growth_rate = int(growth_rate)
 
     def __repr__(self):
-        return "<Planet %d at %s with %d ships>" % (self.id, self.position, self.ship_count)
+        return "<P(%d)@%s #%d +%d>" % (self.id, self.position, self.ship_count, self.growth_rate)
 
     def update(self, owner, ship_count):
         self.owner = PLAYER_MAP.get(int(owner))

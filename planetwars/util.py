@@ -6,7 +6,9 @@ from collections import defaultdict
 
 log = getLogger(__name__)
 
-Point = namedtuple("Point", "x y")
+class Point(namedtuple("Point", "x y")):
+    def __repr__(self):
+        return "(%0.2fx%0.2f)" % (self.x, self.y)
 
 class ParsingException(Exception):
     pass

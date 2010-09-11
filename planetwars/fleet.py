@@ -13,7 +13,7 @@ class Fleet(object):
         self.turns_remaining = int(turns_remaining)
 
     def __repr__(self):
-        return "<Fleet %d of %d ships from %s to %s - arrives in %d turns>" % (self.id, self.ship_count, self.source, self.destination, self.turns_remaining)
+        return "<F(%d) #%d %s -> %s ETA %d>" % (self.id, self.ship_count, self.source, self.destination, self.turns_remaining)
 
     def update(self, turns_remaining):
         self.turns_remaining = int(turns_remaining)
