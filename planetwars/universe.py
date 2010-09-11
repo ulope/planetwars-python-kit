@@ -166,9 +166,9 @@ class Universe(object):
         elif tokens[0] == "F":
             if len(tokens) != 7:
                 raise ParsingException("Invalid format in gamestate: '%s'" % (game_state_line,))
-            id = _make_id(*tokens[1:5])
+            id = _make_id(*tokens[1:])
             if id in self._fleets:
-                self._fleets[id].update(tokens[6])
+                pass # (fleets already updated by turn_done)
             else:
                 new_fleet = self.fleet_class(self, id, *tokens[1:])
                 self._fleets[id] = new_fleet
@@ -185,11 +185,16 @@ class Universe(object):
             self._cache['p']['o'][planet.owner].add(planet)
 
     def turn_done(self):
+        _fleets = {}
         for id, fleet in self._fleets.items():
-            if fleet.turns_remaining == 1:
-                fleet.turns_remaining = 0
+            fleet.turns_remaining -= 1
+            # Ugh.. Since fleets have no id in the engine we have to make sure they match next turn
+            new_id = _make_id(fleet.owner.id, fleet.ship_count, fleet.source.id, fleet.destination.id, fleet.trip_length, fleet.turns_remaining)
+            if fleet.turns_remaining == 0:
                 self._cache['f']['o'][fleet.owner].remove(fleet)
                 self._cache['f']['s'][fleet.source].remove(fleet)
                 self._cache['f']['d'][fleet.destination].remove(fleet)
-                del self._fleets[id]
+            else:
+                _fleets[new_id] = fleet
+        self._fleets = _fleets
 

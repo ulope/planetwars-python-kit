@@ -43,6 +43,7 @@ class Game(object):
         self.bot = bot_class(self.universe)
         self.timeout = timeout
         self.turn_count = 0
+        self._fleets_to_send = {}
 
         if self.logging_enabled:
             logging.basicConfig(filename=options.logfile, level=getattr(logging, options.loglevel), format="%(asctime)s %(levelname)s: %(message)s")
@@ -67,10 +68,12 @@ class Game(object):
         has_itimer = True
         try:
             while True:
+                if sys.stdin.closed:
+                    break
                 line = sys.stdin.readline().strip()
                 if line.startswith("go"):
                     self.turn_count += 1
-                    log.info("=== TURN START ===")
+                    log.info("=== TURN START === (Turn no: %d)" % self.turn_count)
                     turn_start = time()
                     try:
                         if self.has_alarm and has_itimer:
@@ -106,10 +109,17 @@ class Game(object):
         
 
     def send_fleet(self, source_id, destination_id, ship_count):
-        sys.stdout.write("%d %d %d\n" % (source_id, destination_id, ship_count))
+        """Record fleets to send so we can aggregate them."""
+        key = "%d%d" % (source_id, destination_id)
+        if key in self._fleets_to_send:
+            self._fleets_to_send[key][2] += ship_count
+        else:
+            self._fleets_to_send[key] = [source_id, destination_id, ship_count]
 
     def turn_done(self):
-        self.universe.turn_done()
+        for source_id, destination_id, ship_count in self._fleets_to_send.values():
+            sys.stdout.write("%d %d %d\n" % (source_id, destination_id, ship_count))
+        self._fleets_to_send = {}
         sys.stdout.write("go\n")
         sys.stdout.flush()
-
+        self.universe.turn_done()

@@ -15,8 +15,5 @@ class Fleet(object):
     def __repr__(self):
         return "<F(%d) #%d %s -> %s ETA %d>" % (self.id, self.ship_count, self.source, self.destination, self.turns_remaining)
 
-    def update(self, turns_remaining):
-        self.turns_remaining = int(turns_remaining)
-
 class Fleets(TypedSetBase):
     accepts = (Fleet, )
