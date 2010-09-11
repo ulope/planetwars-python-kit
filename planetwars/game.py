@@ -5,6 +5,8 @@ from planetwars.universe import Universe
 from planetwars.util import timeout_handler, TimeIsUp
 from time import time
 from optparse import OptionParser
+from planetwars.planet import Planet
+from planetwars.fleet import Fleet
 
 log = logging.getLogger(__name__)
 
@@ -19,15 +21,25 @@ parser.add_option("--level", dest="loglevel", default="DEBUG", type="choice",
 
 class Game(object):
     """The Game object talks to the tournament engine and updates the universe.
-    It also instantiates your Bot implementaion in __init__.
-
     It supports a few command-line options call with "-h" to see a list.
+
+    You should instantiate it with your BotClass as first argument, e.g:
+    >>> Game(MyBot)
+
+    Optionally you may supply your own universe, planet and fleet classes that are
+    to be used instead of the default ones (e.g. your own Planet subclass that does something different).
+
+    The timeout parameter specifies after which amout of time (in seconds) a TimeIsUp
+    exception will be raised (by default this will abort the current turn and log a warning).
+    This only works on platforms that support signal.SIGABRT (i.e. not windows) and on Python >= 2.6
+    Unfortunately the tournament environment currently uses python 2.5 so you should not
+    count on it beeing available.
     """
-    def __init__(self, bot_class, timeout=0.95):
+    def __init__(self, bot_class, universe_class=Universe, planet_class=Planet, fleet_class=Fleet, timeout=0.95):
         options, _ = parser.parse_args()
 
         self.logging_enabled = bool(options.logfile)
-        self.universe = Universe(self)
+        self.universe = universe_class(self, planet_class=planet_class, fleet_class=fleet_class)
         self.bot = bot_class(self.universe)
         self.timeout = timeout
         self.turn_count = 0
@@ -73,10 +85,9 @@ class Game(object):
                         log.warning("Bot failed to catch TimeIsUp exception!")
                         pass
                     except:
-                        if self.logging_enabled:
-                            log.error("Exception in bot.do_turn()", exc_info=True)
-                        else:
+                        if not self.logging_enabled:
                             raise
+                        log.error("Exception in bot.do_turn()", exc_info=True)
                     if self.has_alarm and has_itimer:
                         signal.setitimer(signal.ITIMER_REAL, 0)
                     log.info("### TURN END ### (time taken: %0.4f s)" % (time() - turn_start, ))
@@ -86,6 +97,11 @@ class Game(object):
         except KeyboardInterrupt:
             # exit
             pass
+        except:
+            # This should not happen, but just in case
+            if not self.logging_enabled:
+                raise
+            log.fatal("Error in game engine! Report at http://github.com/ulope/planetwars-python-kit/issues", exc_info=True)
         log.info("########### GAME END ########### (Turn count: %d)" % self.turn_count)
         
 

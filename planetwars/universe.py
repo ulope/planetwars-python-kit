@@ -21,8 +21,10 @@ class Universe(object):
     they will still be valid in the next turn (although fleets of course will expire once they reach their destination).
     """
 
-    def __init__(self, game):
+    def __init__(self, game, planet_class=Planet, fleet_class=Fleet):
         self.game = game
+        self.planet_class = planet_class
+        self.fleet_class = fleet_class
         self._planets = {}
         self._fleets = {}
         self.planet_id_map = {}
@@ -133,6 +135,7 @@ class Universe(object):
             for target in destination:
                 self.game.send_fleet(source.id, target.id, ship_count)
             return
+        source.ship_count -= ship_count
         self.game.send_fleet(source.id, destination.id, ship_count)
 
 
@@ -154,7 +157,7 @@ class Universe(object):
             if id in self.planet_id_map:
                 self._update_planet(id, tokens[3:5])
             else:
-                new_planet = Planet(self, self.planet_id, *tokens[1:])
+                new_planet = self.planet_class(self, self.planet_id, *tokens[1:])
                 self._planets[self.planet_id] = new_planet
                 self.planet_id_map[id] = self.planet_id
                 self._cache['p']['o'][new_planet.owner].add(new_planet)
@@ -167,7 +170,7 @@ class Universe(object):
             if id in self._fleets:
                 self._fleets[id].update(tokens[6])
             else:
-                new_fleet = Fleet(self, id, *tokens[1:])
+                new_fleet = self.fleet_class(self, id, *tokens[1:])
                 self._fleets[id] = new_fleet
                 self._cache['f']['o'][new_fleet.owner].add(new_fleet)
                 self._cache['f']['s'][new_fleet.source].add(new_fleet)
