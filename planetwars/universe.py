@@ -138,7 +138,8 @@ class Universe(object):
         source.ship_count -= ship_count
         self.game.send_fleet(source.id, destination.id, ship_count)
 
-
+        trip_length = source.distance(destination)
+        self._add_fleet(player.ME, ship_count, source.id, destination.id, trip_length, trip_length + 1)
 
     # Internal methods below. You should never need to call any of these yourself.
     #############
@@ -166,15 +167,7 @@ class Universe(object):
         elif tokens[0] == "F":
             if len(tokens) != 7:
                 raise ParsingException("Invalid format in gamestate: '%s'" % (game_state_line,))
-            id = _make_id(*tokens[1:])
-            if id in self._fleets:
-                pass # (fleets already updated by turn_done)
-            else:
-                new_fleet = self.fleet_class(self, id, *tokens[1:])
-                self._fleets[id] = new_fleet
-                self._cache['f']['o'][new_fleet.owner].add(new_fleet)
-                self._cache['f']['s'][new_fleet.source].add(new_fleet)
-                self._cache['f']['d'][new_fleet.destination].add(new_fleet)
+            self._add_fleet(*tokens[1:])
 
     def _update_planet(self, planet_id, values):
         planet = self._planets[self.planet_id_map[planet_id]]
@@ -183,6 +176,17 @@ class Universe(object):
         if planet.owner != old_owner:
             self._cache['p']['o'][old_owner].remove(planet)
             self._cache['p']['o'][planet.owner].add(planet)
+
+    def _add_fleet(self, *args):
+        id = _make_id(*args)
+        if id in self._fleets:
+            pass # (fleets already updated by turn_done)
+        else:
+            new_fleet = self.fleet_class(self, id, *args)
+            self._fleets[id] = new_fleet
+            self._cache['f']['o'][new_fleet.owner].add(new_fleet)
+            self._cache['f']['s'][new_fleet.source].add(new_fleet)
+            self._cache['f']['d'][new_fleet.destination].add(new_fleet)
 
     def turn_done(self):
         _fleets = {}
