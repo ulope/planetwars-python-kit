@@ -42,13 +42,16 @@ class Planet(object):
         return self.universe.find_fleets(source=self, owner=self.owner)
 
     def send_fleet(self, target, ship_count):
-        """Sends a fleet to target. Also accepts a set of targets."""
+        """Sends a fleet to target. Also accepts a set of targets.
+        Returns the fleet(s) created by this action.
+        """
         if isinstance(target, set):
             if self.ship_count >= ship_count * len(target):
-                self.universe.send_fleet(self, target, ship_count)
-            return
-        if self.ship_count >= ship_count:
-            self.universe.send_fleet(self, target, ship_count)
+                return self.universe.send_fleet(self, target, ship_count)
+        else:
+            if self.ship_count >= ship_count:
+                return self.universe.send_fleet(self, target, ship_count)
+        return None
 
 class Planets(TypedSetBase):
     accepts = (Planet, )
