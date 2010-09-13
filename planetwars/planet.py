@@ -22,7 +22,7 @@ class Planet(object):
         self.ship_count = int(ship_count)
 
     def distance(self, other):
-        if not other in _dist_cache:
+        if not (self, other) in _dist_cache:
             if isinstance(other, Planet):
                 ox = other.position.x
                 oy = other.position.y
@@ -31,8 +31,8 @@ class Planet(object):
                 oy = other[1]
             dx = self.position.x - ox
             dy = self.position.y - oy
-            _dist_cache[other] = int(ceil(sqrt(dx ** 2 + dy ** 2)))
-        return _dist_cache[other]
+            _dist_cache[(self, other)] = int(ceil(sqrt(dx ** 2 + dy ** 2)))
+        return _dist_cache[(self, other)]
 
     __sub__ = distance
 
