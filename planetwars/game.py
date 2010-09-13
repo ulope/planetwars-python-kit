@@ -110,7 +110,7 @@ class Game(object):
 
     def send_fleet(self, source_id, destination_id, ship_count):
         """Record fleets to send so we can aggregate them."""
-        key = "%d%d" % (source_id, destination_id)
+        key = "%d.%d" % (source_id, destination_id)
         if key in self._fleets_to_send:
             self._fleets_to_send[key][2] += ship_count
         else:
