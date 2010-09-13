@@ -3,6 +3,8 @@ from planetwars.util import Point, TypedSetBase
 from math import ceil, sqrt
 import player
 
+_dist_cache = {}
+
 class Planet(object):
     def __init__(self, universe, id, x, y, owner, ship_count, growth_rate):
         self.universe = universe
@@ -20,9 +22,17 @@ class Planet(object):
         self.ship_count = int(ship_count)
 
     def distance(self, other):
-        dx = self.position.x - other.position.x
-        dy = self.position.y - other.position.y
-        return int(ceil(sqrt(dx ** 2 + dy ** 2)))
+        if not other in _dist_cache:
+            if isinstance(other, Planet):
+                ox = other.position.x
+                oy = other.position.y
+            elif isinstance(other, (list, tuple)):
+                ox = other[0]
+                oy = other[1]
+            dx = self.position.x - ox
+            dy = self.position.y - oy
+            _dist_cache[other] = int(ceil(sqrt(dx ** 2 + dy ** 2)))
+        return _dist_cache[other]
 
     __sub__ = distance
 
