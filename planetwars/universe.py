@@ -137,13 +137,13 @@ class Universe(object):
                 source.ship_count -= ship_count
                 self.game.send_fleet(source.id, target.id, ship_count)
                 trip_length = source.distance(target)
-                new_fleets.add(self._add_fleet(player.ME.id, ship_count, source.id, target.id, trip_length, trip_length + 1))
+                new_fleets.add(self._add_fleet(player.ME.id, ship_count, source.id, target.id, trip_length, trip_length))
             return new_fleets
         else:
             source.ship_count -= ship_count
             self.game.send_fleet(source.id, destination.id, ship_count)
             trip_length = source.distance(destination)
-            return self._add_fleet(player.ME.id, ship_count, source.id, destination.id, trip_length, trip_length + 1)
+            return self._add_fleet(player.ME.id, ship_count, source.id, destination.id, trip_length, trip_length)
 
     # Internal methods below. You should never need to call any of these yourself.
     #############
