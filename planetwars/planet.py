@@ -22,6 +22,7 @@ class Planet(object):
         self.ship_count = int(ship_count)
 
     def distance(self, other):
+        """Returns the distance to <other>. <other> must be one of Planet instance, list, tuple or Point."""
         if not (self, other) in _dist_cache:
             if isinstance(other, Planet):
                 ox = other.position.x
