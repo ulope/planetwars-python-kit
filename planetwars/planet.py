@@ -39,6 +39,13 @@ class Planet(object):
 
     __sub__ = distance
 
+    def find_nearest_neighbor(self, owner=None, growth_rate=None):
+        """Find the nearest planet that satisfies the given conditions"""
+        candidates = self.universe.find_planets(owner=owner, growth_rate=growth_rate) - self
+        for planet in sorted(candidates, key=lambda p: p.distance(self)):
+            return planet
+        return None
+
     @property
     def attacking_fleets(self):
         """Hostile (as seen from this planets owner) fleets en-route to this planet."""
