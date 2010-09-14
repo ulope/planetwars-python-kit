@@ -31,8 +31,9 @@ class Planet(object):
                 oy = other[1]
             dx = self.position.x - ox
             dy = self.position.y - oy
-            _dist_cache[(self, other)] = int(ceil(sqrt(dx ** 2 + dy ** 2)))
-            _dist_cache[(other, self)] = int(ceil(sqrt(dx ** 2 + dy ** 2)))
+            distance = int(ceil(sqrt(dx ** 2 + dy ** 2)))
+            _dist_cache[(self, other)] = distance
+            _dist_cache[(other, self)] = distance
         return _dist_cache[(self, other)]
 
     __sub__ = distance
