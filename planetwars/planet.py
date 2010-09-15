@@ -74,4 +74,20 @@ class Planet(object):
         return None
 
 class Planets(TypedSetBase):
+    """Represents a set of Planet objects.
+    All normal set methods are available. Additionaly you can | (or) Planet objects directly into it.
+    Some other convenience methods are available (see below).
+    """
     accepts = (Planet, )
+
+    @property
+    def ship_count(self):
+        """Returns the combined ship count of all Planet objects in this set"""
+        return sum(p.ship_count for p in self)
+
+    @property
+    def growth_rate(self):
+        """Returns the combined growth rate of all Planet objects in this set"""
+        return sum(p.growth_rate for p in self)
+
+    
