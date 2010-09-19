@@ -1,7 +1,8 @@
-from planetwars.player import PLAYER_MAP
+from planetwars.player import PLAYER_MAP, NOBODY
 from planetwars.util import TypedSetBase
 from operator import attrgetter
 from itertools import groupby
+from collections import defaultdict
 
 class Fleet(object):
     def __init__(self, universe, id, owner, ship_count, source, destination, trip_length, turns_remaining):
@@ -38,3 +39,18 @@ class Fleets(TypedSetBase):
         turn_getter = attrgetter("turns_remaining")
         for k, fleets in groupby(sorted(self, key=turn_getter, reverse=reverse), turn_getter):
             yield (k, Fleets(fleets))
+
+    def effective_ship_count_at_destinations(self):
+        """Returns the fleets effective ship count (i.e. taking the planets growth into account) once they reach the destination.
+
+        (Currently doesn't account for multiple fleets arriving on the same turn)"""
+        destinations = defaultdict(int)
+        for turns, fleets in self.arrivals():
+            for fleet in fleets:
+                if fleet.owner == fleet.destination.owner:
+                    destinations[fleet.destination] += fleet.ship_count + fleet.destination.growth_rate * fleet.turns_remaining
+                elif fleet.destination.owner == NOBODY:
+                    destinations[fleet.destination] += fleet.ship_count
+                elif fleet.owner != fleet.destination.owner:
+                    destinations[fleet.destination] += fleet.ship_count - fleet.destination.growth_rate * fleet.turns_remaining
+        return destinations
