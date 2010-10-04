@@ -1,4 +1,4 @@
-from zlib import adler32
+from hashlib import sha256
 from logging import getLogger, Handler
 from planetwars.compat import namedtuple
 from functools import update_wrapper
@@ -17,7 +17,7 @@ class TimeIsUp(Exception):
     pass
 
 def _make_id(*args):
-    return adler32("".join(map(str, args)))
+    return filter(lambda y: y.isdigit(), sha256("".join(map(str, args))).hexdigest()[:16])
 
 #noinspection PyUnusedLocal
 def timeout_handler(signal, frame):
